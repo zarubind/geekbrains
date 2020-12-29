@@ -94,5 +94,14 @@ def fact(n):
             answer *= j
         yield answer
 
+def fact2(n):
+    if n == 0:
+        return 1
+    else:
+        return n * fact2(n-1)
+
 for el in fact(5):
     print(el)
+
+for el in range(1, 6):
+    print(fact2(el))
