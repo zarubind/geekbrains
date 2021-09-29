@@ -14,8 +14,8 @@ with open('1.txt', 'w') as file:
 # 2. Изучить список открытых API. Найти среди них любое, требующее авторизацию (любого типа).
 # Выполнить запросы к нему, пройдя авторизацию. Ответ сервера записать в файл.
 
-username = 'zarubind'
-token = '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'
+username = 'user'
+token = 'xxxxxx'
 repos = requests.get('https://api.github.com/user', auth=(username, token))
 with open('2.txt', 'w') as file:
     file.write(repos.text)
