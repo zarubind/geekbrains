@@ -28,14 +28,14 @@ def parse_salary(salary):
     if salary:
         salary_split = salary.split()
         if salary.find('от') != -1:
-            salary_from = salary_split[1]
+            salary_from = int(salary_split[1])
             currency = salary_split[2].replace('.', '')
         elif salary.find('до') != -1:
-            salary_to = salary_split[1]
+            salary_to = int(salary_split[1])
             currency = salary_split[2].replace('.', '')
         else:
-            salary_from = salary_split[0]
-            salary_to = salary_split[2]
+            salary_from = int(salary_split[0])
+            salary_to = int(salary_split[2])
             currency = salary_split[3].replace('.', '')
     return [salary_from, salary_to, currency]
 
