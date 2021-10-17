@@ -6,9 +6,37 @@
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.support.ui import Select
 import time
 from pprint import pprint
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.action_chains import ActionChains
+from pymongo import MongoClient
+
+def write_to_db(data):
+    client = MongoClient('127.0.0.1', 27017)
+    db = client['emails']
+    mail_ru = db.mail_ru
+    for item in data:
+        if mail_ru.count_documents(item) == 0:
+            mail_ru.insert_one(item)
+
+def parse_msg(link):
+    driver.get(link)
+    try:
+        wait = WebDriverWait(driver, 10)
+        button_wait = wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'letter__date')))
+        msg_info = {
+            'link': link,
+            'sender': driver.find_element_by_class_name('letter-contact').get_attribute('title'),
+            'subj': driver.find_element_by_class_name('thread__subject').text,
+            'date': driver.find_element_by_class_name('letter__date').text,
+            'full_text': driver.find_element_by_class_name('letter__body').text
+        }
+        return msg_info
+    except:
+        parse_msg(link)
 
 chrome_options = Options()
 driver = webdriver.Chrome(executable_path='./chromedriver.exe', options=chrome_options)
@@ -29,22 +57,29 @@ password_el.send_keys(password)
 password_el.send_keys(Keys.ENTER)
 
 time.sleep(6)
-mails = driver.find_elements_by_xpath('//a[@class="llc js-tooltip-direction_letter-bottom js-letter-list-item llc_normal"]')
-pprint(mails)
-mail_list = []
-for mail in mails:
-    mail.click()
-    time.sleep(1)
-    mail_list.append({'link': driver.current_url,
-                      'sender': driver.find_element_by_class_name('letter-contact').get_attribute('title'),
-                      'subj': driver.find_element_by_class_name('thread__subject').text,
-                      'date': driver.find_element_by_class_name('letter__date').text,
-                      'full_text': driver.find_element_by_class_name('letter-body__body-content').text
-                      })
-    driver.back()
-    time.sleep(1)
-    pprint(mail_list)
+links = set()
+while True:
+    flag = len(links)
+    try:
+        wait = WebDriverWait(driver, 10)
+        button_wait = wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'dataset__items')))
+    except: continue
+    messages_list = driver.find_element_by_class_name('dataset__items')
+    messages = messages_list.find_elements_by_tag_name('a')
+    for message in messages:
+        link = message.get_attribute('href')
+        if (link is not None) and ('e.mail' in link):
+            links.add(link)
+    if flag == len(links): break
+    actions = ActionChains(driver)
+    actions.move_to_element(messages[-1])
+    actions.perform()
 
-#for link in mail_list:
+msg_list = []
+for link in links:
+    msg_list.append(parse_msg(link))
 
-# driver.close()
+pprint(msg_list)
+write_to_db(msg_list)
+
+driver.close()
